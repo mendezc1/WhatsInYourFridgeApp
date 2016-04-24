@@ -8,8 +8,16 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.content.Intent;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 public class WhatsInYourFridge extends AppCompatActivity {
+    public final static String EXTRA_MESSAGE = "com.mycompany.myfirstapp.MESSAGE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,14 +26,30 @@ public class WhatsInYourFridge extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+
+        ScrollView sv = new ScrollView(this);
+        LinearLayout ll = new LinearLayout(this);
+        ll.setOrientation(LinearLayout.VERTICAL);
+        sv.addView(ll);
+
+      //  TextView tv = new TextView(this);
+      //  tv.setText("Whats in your fridge?");
+       // ll.addView(tv);
+
+        EditText et = new EditText(this);
+        et.setText(R.string.edit_message);
+        ll.addView(et);
+
+        Button b = new Button(this);
+        b.setText(R.string.button_send);
+        ll.addView(b);
+        for(int i = 0; i < 20; i++) {
+           // CheckBox cb = new CheckBox(this);
+            TextView textView = new TextView(this);
+            textView.setText(R.string.title_activity_display_message);
+            ll.addView(textView);
+        }
+        this.setContentView(sv);
     }
 
     @Override
@@ -49,4 +73,12 @@ public class WhatsInYourFridge extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    /** Called when the user clicks the Send button */
+    public void sendMessage(View view) {
+        EditText editText = (EditText) findViewById(R.id.edit_message);
+
+    }
+
 }
+
