@@ -1,5 +1,6 @@
 package cs496.whatsinyourfridge;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -13,12 +14,15 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import static cs496.whatsinyourfridge.R.id.edit_message;
 
 public class WhatsInYourFridge extends AppCompatActivity {
     public final static String EXTRA_MESSAGE = "com.mycompany.myfirstapp.MESSAGE";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,30 +30,6 @@ public class WhatsInYourFridge extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
-        ScrollView sv = new ScrollView(this);
-        LinearLayout ll = new LinearLayout(this);
-        ll.setOrientation(LinearLayout.VERTICAL);
-        sv.addView(ll);
-
-      //  TextView tv = new TextView(this);
-      //  tv.setText("Whats in your fridge?");
-       // ll.addView(tv);
-
-        EditText et = new EditText(this);
-        et.setText(R.string.edit_message);
-        ll.addView(et);
-
-        Button b = new Button(this);
-        b.setText(R.string.button_send);
-        ll.addView(b);
-        for(int i = 0; i < 20; i++) {
-           // CheckBox cb = new CheckBox(this);
-            TextView textView = new TextView(this);
-            textView.setText(R.string.title_activity_display_message);
-            ll.addView(textView);
-        }
-        this.setContentView(sv);
     }
 
     @Override
@@ -75,9 +55,23 @@ public class WhatsInYourFridge extends AppCompatActivity {
     }
 
     /** Called when the user clicks the Send button */
-    public void sendMessage(View view) {
-        EditText editText = (EditText) findViewById(R.id.edit_message);
+    public void add_item(View view) {
+        EditText text = (EditText)findViewById(edit_message);
+        String str = text.getText().toString();
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_SHORT;
+        Toast toast = Toast.makeText(context, str, duration);
+        toast.show();
 
+        TextView textView = new TextView(this);
+        textView.setText(str);
+
+
+       ScrollView sv = (ScrollView) findViewById(R.id.ingredient_list);
+        LinearLayout ll= (LinearLayout) findViewById(R.id.mainLayoutID);
+       // sv.addView(ll);
+        ll.addView(textView);
+        //this.setContentView(sv);
     }
 
 }
