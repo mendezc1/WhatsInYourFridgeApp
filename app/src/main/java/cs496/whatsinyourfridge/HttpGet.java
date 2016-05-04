@@ -2,8 +2,6 @@ package cs496.whatsinyourfridge;
 
 import android.util.Log;
 
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -52,14 +50,19 @@ public class HttpGet {
         StringBuffer rv = new StringBuffer();
         for (int c; (c = in.read()) >= 0; rv.append((char) c));
 //        rv.toString();
-        Object obj = rv;
-        JSONObject jsonObject = (JSONObject) obj;
-        String title = (String) jsonObject.get("title");
-        String source_url = (String) jsonObject.get("source_url");
+        //Object obj = rv;
+        //JSONObject jsonObject = (JSONObject) obj;
+        //String title = (String) jsonObject.get("title");
+        //String source_url = (String) jsonObject.get("source_url");
         //JSONArray companyList = (JSONArray) jsonObject.get("Company List");
-        Log.d("Title ", title);
-        Log.d("Sourceurl", source_url);
-        return rv.toString();
+        //Log.d("Title ", title);
+
+        String rvString = rv.toString();
+        Log.d("RV string", rvString);
+        int titleIndex = rvString.indexOf("title");
+        int endOfTitle = rvString.indexOf("source_url");
+        String titleSlice = rvString.substring(titleIndex+9, endOfTitle-4);
+        return titleSlice;
     }
 
 }
