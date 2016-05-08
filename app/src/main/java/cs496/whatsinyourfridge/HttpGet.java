@@ -59,10 +59,8 @@ public class HttpGet {
 
         String rvString = rv.toString();
         Log.d("RV string", rvString);
-        int titleIndex = rvString.indexOf("title");
-        int endOfTitle = rvString.indexOf("source_url");
-        String titleSlice = rvString.substring(titleIndex+9, endOfTitle-4);
-        return titleSlice;
+
+        return rvString;
     }
 
 }
