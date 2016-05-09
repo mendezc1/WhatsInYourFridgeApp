@@ -65,8 +65,8 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
                     String titleSlice = rvString.substring(titleIndex+9, endOfTitle-4);
                     String sourceSlice = rvString.substring(sourceIndex+14, endOfSource-4);
                     Log.d("source_url ", sourceSlice);
-                    addRecipe(titleSlice);
-                    addRecipe(sourceSlice);
+                    addRecipe(titleSlice, "title");
+                    addRecipe(sourceSlice, "url");
                     int imageIndex = rvString.indexOf("image_url");
                     int endOfImage = rvString.indexOf("social_rank");
                     ImageView i = (ImageView)findViewById(R.id.image);
@@ -145,18 +145,19 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
         LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
         ll.addView(i);
     }
-    private void addRecipe(final String str) {
+    private void addRecipe(final String str, final String type) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             TextView txtResult = new TextView(this);
             txtResult.setText(str);
-            txtResult.setOnClickListener(new View.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
-                    startActivity(browserIntent);
-                }
-            });
+            if(type == "url"){
+             txtResult.setOnClickListener(new View.OnClickListener() {
+                 @Override
+                 public void onClick(View v) {
+                     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(str));
+                     startActivity(browserIntent);
+                 }
+             });
+            }
             LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
             ll.addView(txtResult);
             if (txtResult != null) {
@@ -169,7 +170,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
                     new Runnable() {
                         @Override
                         public void run() {
-                            addRecipe(str);
+                            addRecipe(str, type);
                         }
                     }
             );
