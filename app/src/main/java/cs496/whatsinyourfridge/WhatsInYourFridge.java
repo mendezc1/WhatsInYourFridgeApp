@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -22,29 +23,82 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 import static cs496.whatsinyourfridge.R.id.edit_message;
 
 public class WhatsInYourFridge extends AppCompatActivity implements ServiceConnection, SearchService.Callback {
-    String ingredients = "";
+    String ingredients = " ";
+    byte[] buffer;
+    String mostRecent = " ";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_whats_in_your_fridge);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
+        //LinearLayout linear= (LinearLayout) findViewById(R.id.recipe_list_ll);
+        //ImageView image = new ImageView(cs496.whatsinyourfridge.WhatsInYourFridge.this);
+        //image.setImageResource(R.mipmap.ic_launcher);
+       // linear.addView(image);
         // make sure the service is running
-        //Context app = getApplicationContext();
+        //addImage();
        // Intent intent = new Intent(app, SearchService.class);
         //app.startService(intent);
-        //View v = findViewById(R.id.mainLayoutID);
-       // doGet(v);
+        Context app = getApplicationContext();
+        SharedPreferences sharedPref = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        mostRecent = sharedPref.getString(getString(R.string.ingredientList), " ");
+
+
+//        String filename = "mostRecentSearch";
+ //       FileInputStream inputStream;
+
+  //      try {
+   //         inputStream = openFileInput(filename);
+    //        inputStream.read(buffer);
+     //       inputStream.close();
+
+
+          //  mostRecent = inputStream.toString();
+//        } catch (Exception e) {
+ //           e.printStackTrace();
+  //      }
+        //String myString = IOUtils.toString(inputStream, "UTF-8");
+
+        Log.d("most recent", mostRecent);
+        if(mostRecent.length() > 2) {
+            //TextView textView = new TextView(this);
+            //textView.setText("Your most recent search: ");
+            //textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+            //LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_v);
+            //ll.addView(textView);
+            View v = findViewById(R.id.ingredient_list_ll);
+            doGet(v);
+
+
+        }
     }
+    public static Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            Log.d("error", String.valueOf(e));
+            return null;
+        }
+    }
+
     public void doGet(View v) {
         new AsyncTask<Void, Void, String>() {
             protected void onPreExecute() {
@@ -54,7 +108,12 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
             protected String doInBackground(Void... params) {
                 HttpGet http = new HttpGet("http://food2fork.com/api/search");
                 http.addFormField("key", "8fb888939f3d819b54a8c4f41cf9822f");
-                http.addFormField("q", ingredients);
+                if(ingredients == " "){
+                    http.addFormField("q", mostRecent);
+                }
+                else {
+                    http.addFormField("q", ingredients);
+                }
                 //http.addFormField("course", "mobile and cloud development");
                 try {
                     String rvString = http.finish();
@@ -64,14 +123,16 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
                     int endOfSource = rvString.indexOf("recipe_id");
                     String titleSlice = rvString.substring(titleIndex+9, endOfTitle-4);
                     String sourceSlice = rvString.substring(sourceIndex+14, endOfSource-4);
+                    int imageStart = rvString.indexOf("image_url");
+                    int imageEnd = rvString.indexOf("social_rank");
+                    String imageSlice = rvString.substring(imageStart+13, imageEnd-4);
                     Log.d("source_url ", sourceSlice);
+                    Log.d("Image_url", imageSlice);
+
+                    addImage("http://static.food2fork.com/387114468_aafd1be3404a2f.jpg");
                     addRecipe(titleSlice, "title");
                     addRecipe(sourceSlice, "url");
-                    int imageIndex = rvString.indexOf("image_url");
-                    int endOfImage = rvString.indexOf("social_rank");
-                    ImageView i = (ImageView)findViewById(R.id.image);
-                    Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL("http://static.food2fork.com/19321150c4.jpg").getContent());
-                    addImage(i, bitmap);
+
                     return "thisshoulddonothing";
                 } catch (Exception e) {
                     return formatError(e);
@@ -106,6 +167,17 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        String filename = "mostRecentSearch";
+        FileOutputStream outputStream;
+
+        try {
+            outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
+            outputStream.write(ingredients.getBytes());
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // let's disconnect from the service; it keeps running, though
        if (service != null)
            unbindService(this);
@@ -124,13 +196,19 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
         EditText text = (EditText)findViewById(edit_message);
         String str = text.getText().toString();
         ingredients += ", " + str;
-        View v = findViewById(R.id.mainLayoutID);
+        View v = findViewById(R.id.recipe_list_ll);
         doGet(v);
         TextView textView = new TextView(this);
         textView.setText(str);
 
         LinearLayout ll= (LinearLayout) findViewById(R.id.mainLayoutID);
         ll.addView(textView);
+
+       Context app = getApplicationContext();
+        SharedPreferences sharedPref = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.ingredientList), ingredients);
+        editor.commit();
     }
 
     @Override
@@ -140,15 +218,33 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
         Toast toast = Toast.makeText(context, "Pizza!", duration);
         toast.show();
     }
-    private void addImage(ImageView i, Bitmap bitmap){
-        i.setImageBitmap(bitmap);
-        LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
-        ll.addView(i);
+    private void addImage(String img_url){
+
+        Log.d("HELLO", "inadd image");
+        LinearLayout linear= (LinearLayout) findViewById(R.id.recipe_list_ll);
+        ImageView image = new ImageView(WhatsInYourFridge.this);
+        image.setImageResource(R.mipmap.ic_launcher);
+        linear.addView(image);
+
+        Bitmap bitmap = getBitmapFromURL(img_url);
+       // image.setImageURI(Uri.parse(""));
+        image.setImageBitmap(bitmap);
+       // image.getLayoutParams().height = 200;
+        //image.getLayoutParams().width = 200;
+
+        Log.d("HELLO1234 ", String.valueOf(image));
+
+       // LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
+       // ImageView image = new ImageView(cs496.whatsinyourfridge.WhatsInYourFridge.this);
+       // image.setImageResource(R.mipmap.ic_launcher);
+       // ll.addView(image);
+
     }
     private void addRecipe(final String str, final String type) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             TextView txtResult = new TextView(this);
             txtResult.setText(str);
+
             if(type == "url"){
              txtResult.setOnClickListener(new View.OnClickListener() {
                  @Override

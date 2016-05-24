@@ -8,20 +8,23 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/activity_whats_in_your_fridge">
 
-    <ScrollView
-        android:id="@+id/recipe_list"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <!--Scrollable content here-->
         <LinearLayout
-            android:id="@+id/recipe_list_ll"
+            android:id="@+id/recipe_list_v"
+            android:orientation="horizontal"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-
+            android:layout_height="wrap_content">
+            <ScrollView
+                android:id="@+id/recipe_list"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent">
+                <LinearLayout
+                    android:id="@+id/recipe_list_ll"
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                </LinearLayout>
+            </ScrollView>
         </LinearLayout>
-    </ScrollView>
 
 
     <LinearLayout
