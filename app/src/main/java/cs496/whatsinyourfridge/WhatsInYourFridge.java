@@ -3,7 +3,6 @@ package cs496.whatsinyourfridge;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,11 +12,9 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -31,57 +28,71 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static cs496.whatsinyourfridge.R.id.edit_message;
+import eecs.oregonstate.edu.tutorialauth.R;
 
-public class WhatsInYourFridge extends AppCompatActivity implements ServiceConnection, SearchService.Callback {
+
+public class WhatsInYourFridge extends AppCompatActivity implements BufferThread.StatusListener  {
     String ingredients = " ";
-    byte[] buffer;
     String mostRecent = " ";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_whats_in_your_fridge);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        //LinearLayout linear= (LinearLayout) findViewById(R.id.recipe_list_ll);
-        //ImageView image = new ImageView(cs496.whatsinyourfridge.WhatsInYourFridge.this);
-        //image.setImageResource(R.mipmap.ic_launcher);
-       // linear.addView(image);
-        // make sure the service is running
-        //addImage();
-       // Intent intent = new Intent(app, SearchService.class);
-        //app.startService(intent);
+        Intent intent = getIntent();
+        String username = intent.getStringExtra("username");
+        String password = intent.getStringExtra("password");
+        long session = intent.getLongExtra("session", 0L);
+
+        if (username == null || password == null || session <= 0L) {
+            UiUtil.toastOnUiThread(this, "Error: username, password, session");
+            return;
+       }
+        setContentView(R.layout.content_whats_in_your_fridge);
         Context app = getApplicationContext();
         SharedPreferences sharedPref = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         mostRecent = sharedPref.getString(getString(R.string.ingredientList), " ");
 
-
-//        String filename = "mostRecentSearch";
- //       FileInputStream inputStream;
-
-  //      try {
-   //         inputStream = openFileInput(filename);
-    //        inputStream.read(buffer);
-     //       inputStream.close();
-
-
-          //  mostRecent = inputStream.toString();
-//        } catch (Exception e) {
- //           e.printStackTrace();
-  //      }
-        //String myString = IOUtils.toString(inputStream, "UTF-8");
+        buffer = new BufferThread(this, new FileManager(this), new Server(this, username, password, session));
+        buffer.start();
 
         Log.d("most recent", mostRecent);
         if(mostRecent.length() > 2) {
-            //TextView textView = new TextView(this);
-            //textView.setText("Your most recent search: ");
-            //textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-            //LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_v);
-            //ll.addView(textView);
             View v = findViewById(R.id.ingredient_list_ll);
             doGet(v);
 
 
+        }
+    }
+    private BufferThread buffer;
+
+    public void doSave(View v) {
+        try {
+            Recipe entry = new Recipe();
+            entry.setTitle(UiUtil.readText(this, R.id.txtTitle));
+            if (entry.getTitle().length() == 0)
+                throw new IllegalArgumentException("Please enter a title.");
+            entry.setBlather(UiUtil.readText(this, R.id.txtBlather));
+            if (entry.getBlather().length() == 0)
+                throw new IllegalArgumentException("Please enter an ingredient.");
+
+            String tags = "";
+            if (UiUtil.readChk(this, R.id.chkIronic)) tags += "ironic ";
+            if (UiUtil.readChk(this, R.id.chkSerious)) tags += "serious ";
+            if (UiUtil.readChk(this, R.id.chkSilly)) tags += "silly ";
+            entry.setTags(tags);
+            BufferThread tmp = buffer;
+            if (tmp != null) {
+                tmp.write(entry);
+
+                // reset the screen
+                UiUtil.writeText(this, R.id.txtTitle, "");
+                UiUtil.writeText(this, R.id.txtBlather, "");
+                UiUtil.writeChk(this, R.id.chkSilly, false);
+                UiUtil.writeChk(this, R.id.chkIronic, false);
+                UiUtil.writeChk(this, R.id.chkSerious, false);
+            } else
+                report("Unable to save your work, right now. Sorry!");
+        } catch (IllegalArgumentException ex) {
+            report(ex.getMessage());
         }
     }
     public static Bitmap getBitmapFromURL(String src) {
@@ -149,16 +160,16 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
     protected void onStart() {
         super.onStart();
         // get a reference to the service, for receiving messages
-        Context app = getApplicationContext();
-        Intent intent = new Intent(app, SearchService.class);
-       bindService(intent, this, Context.BIND_AUTO_CREATE);
+        //Context app = getApplicationContext();
+        //Intent intent = new Intent(app, SearchService.class);
+       //bindService(intent, this, Context.BIND_AUTO_CREATE);
     }
 
     public void onServiceConnected(ComponentName name, IBinder binder) {
         // called when bindService succeeds
-        service = ((SearchService.SearchServiceBinder) binder).getService();
-        service.setListener(this);
-        updateLabels();
+      //  service = ((SearchService.SearchServiceBinder) binder).getService();
+      //  service.setListener(this);
+       // updateLabels();
     }
 
     private void updateLabels() {
@@ -167,7 +178,11 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
+        if (buffer != null) {
+            if (!buffer.isInterrupted())
+                buffer.interrupt();
+            buffer.cleanup();
+        }
         String filename = "mostRecentSearch";
         FileOutputStream outputStream;
 
@@ -178,28 +193,33 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         // let's disconnect from the service; it keeps running, though
-       if (service != null)
-           unbindService(this);
+      // if (service != null)
+          // unbindService(this);
+    }
+    @Override
+    public void report(String msg) {
+        UiUtil.toastOnUiThread(this, msg);
     }
 
     public void onServiceDisconnected(ComponentName name) {
         // called when unbindService succeeds
-        if (service != null)
-            service.setListener(null);
-        service = null;
-        updateLabels();
+      // if (service != null)
+       //     service.setListener(null);
+       // service = null;
+        //updateLabels();
     }
 
     /** Called when the user clicks the Add button */
     public void add_item(View view) {
-        EditText text = (EditText)findViewById(edit_message);
-        String str = text.getText().toString();
-        ingredients += ", " + str;
+       //EditText text = (EditText) findViewById(MyMessage);
+       // String str = text.getText().toString();
+        //ingredients += ", " + str;
         View v = findViewById(R.id.recipe_list_ll);
         doGet(v);
         TextView textView = new TextView(this);
-        textView.setText(str);
+       // textView.setText(str);
 
         LinearLayout ll= (LinearLayout) findViewById(R.id.mainLayoutID);
         ll.addView(textView);
@@ -211,7 +231,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
         editor.commit();
     }
 
-    @Override
+
     public void onMeasurement(String recipe) {
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_SHORT;
@@ -280,5 +300,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements ServiceConne
         ex.printStackTrace(new PrintWriter(tmp));
         return tmp.toString();
     }
+
+
 }
 
