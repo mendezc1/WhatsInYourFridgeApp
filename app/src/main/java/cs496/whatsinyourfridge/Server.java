@@ -54,8 +54,8 @@ public class Server {
         // Second, transmit the data.
         HttpPost post = new HttpPost(getUrl() + "?op=create", "UTF-8");
         post.addFormField("title", entry.getTitle());
-        post.addFormField("blather", entry.getBlather());
-        post.addFormField("tags", entry.getTags());
+        post.addFormField("source_url", entry.getSource_url());
+        post.addFormField("img_url", entry.getImg_url());
         post.addFormField("when", Long.toString(entry.getWhen()));
         post.addFormField("sessionId", Long.toString(session));
         String json = post.finish();

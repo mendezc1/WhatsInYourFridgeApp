@@ -1,6 +1,5 @@
 package cs496.whatsinyourfridge;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,16 +8,15 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -51,50 +49,16 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         SharedPreferences sharedPref = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         mostRecent = sharedPref.getString(getString(R.string.ingredientList), " ");
 
-        buffer = new BufferThread(this, new FileManager(this), new Server(this, username, password, session));
-        buffer.start();
-
         Log.d("most recent", mostRecent);
         if(mostRecent.length() > 2) {
             View v = findViewById(R.id.ingredient_list_ll);
             doGet(v);
-
-
         }
+        buffer = new BufferThread(this, new FileManager(this), new Server(this, username, password, session));
+        buffer.start();
     }
     private BufferThread buffer;
 
-    public void doSave(View v) {
-        try {
-            Recipe entry = new Recipe();
-            entry.setTitle(UiUtil.readText(this, R.id.txtTitle));
-            if (entry.getTitle().length() == 0)
-                throw new IllegalArgumentException("Please enter a title.");
-            entry.setBlather(UiUtil.readText(this, R.id.txtBlather));
-            if (entry.getBlather().length() == 0)
-                throw new IllegalArgumentException("Please enter an ingredient.");
-
-            String tags = "";
-            if (UiUtil.readChk(this, R.id.chkIronic)) tags += "ironic ";
-            if (UiUtil.readChk(this, R.id.chkSerious)) tags += "serious ";
-            if (UiUtil.readChk(this, R.id.chkSilly)) tags += "silly ";
-            entry.setTags(tags);
-            BufferThread tmp = buffer;
-            if (tmp != null) {
-                tmp.write(entry);
-
-                // reset the screen
-                UiUtil.writeText(this, R.id.txtTitle, "");
-                UiUtil.writeText(this, R.id.txtBlather, "");
-                UiUtil.writeChk(this, R.id.chkSilly, false);
-                UiUtil.writeChk(this, R.id.chkIronic, false);
-                UiUtil.writeChk(this, R.id.chkSerious, false);
-            } else
-                report("Unable to save your work, right now. Sorry!");
-        } catch (IllegalArgumentException ex) {
-            report(ex.getMessage());
-        }
-    }
     public static Bitmap getBitmapFromURL(String src) {
         try {
             URL url = new URL(src);
@@ -125,7 +89,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                 else {
                     http.addFormField("q", ingredients);
                 }
-                //http.addFormField("course", "mobile and cloud development");
+
                 try {
                     String rvString = http.finish();
                     int titleIndex = rvString.indexOf("title");
@@ -140,7 +104,8 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                     Log.d("source_url ", sourceSlice);
                     Log.d("Image_url", imageSlice);
 
-                    addImage("http://static.food2fork.com/387114468_aafd1be3404a2f.jpg");
+                   // addImage(imageSlice);
+                    addRecipe(imageSlice, "image");
                     addRecipe(titleSlice, "title");
                     addRecipe(sourceSlice, "url");
 
@@ -151,30 +116,17 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
             }
 
             protected void onPostExecute(String txt) {
-                //addRecipe(txt);
+                //addRecipe(txt, "title");
             }
         }.execute();
     }
-    private SearchService service;
+
     @Override
     protected void onStart() {
         super.onStart();
-        // get a reference to the service, for receiving messages
-        //Context app = getApplicationContext();
-        //Intent intent = new Intent(app, SearchService.class);
-       //bindService(intent, this, Context.BIND_AUTO_CREATE);
     }
 
-    public void onServiceConnected(ComponentName name, IBinder binder) {
-        // called when bindService succeeds
-      //  service = ((SearchService.SearchServiceBinder) binder).getService();
-      //  service.setListener(this);
-       // updateLabels();
-    }
 
-    private void updateLabels() {
-
-    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -193,33 +145,51 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        // let's disconnect from the service; it keeps running, though
-      // if (service != null)
-          // unbindService(this);
     }
     @Override
     public void report(String msg) {
         UiUtil.toastOnUiThread(this, msg);
     }
 
-    public void onServiceDisconnected(ComponentName name) {
-        // called when unbindService succeeds
-      // if (service != null)
-       //     service.setListener(null);
-       // service = null;
-        //updateLabels();
-    }
+    public void doSave(View v) {
+        try {
+            Recipe entry = new Recipe();
+            entry.setTitle(UiUtil.readText(this, R.id.txtTitle));
+            if (entry.getTitle().length() == 0)
+                throw new IllegalArgumentException("Please enter an ingredient.");
+            entry.setSource_url(UiUtil.readText(this, R.id.txtBlather));
 
+
+            String tags = "";
+            if (UiUtil.readChk(this, R.id.chkIronic)) tags += "ironic ";
+            if (UiUtil.readChk(this, R.id.chkSerious)) tags += "serious ";
+            if (UiUtil.readChk(this, R.id.chkSilly)) tags += "silly ";
+            entry.setImg_url(tags);
+            BufferThread tmp = buffer;
+            if (tmp != null) {
+                tmp.write(entry);
+
+                // reset the screen
+                UiUtil.writeText(this, R.id.txtTitle, "");
+                UiUtil.writeText(this, R.id.txtBlather, "");
+                UiUtil.writeChk(this, R.id.chkSilly, false);
+                UiUtil.writeChk(this, R.id.chkIronic, false);
+                UiUtil.writeChk(this, R.id.chkSerious, false);
+            } else
+                report("Unable to save your work, right now. Sorry!");
+        } catch (IllegalArgumentException ex) {
+            report(ex.getMessage());
+        }
+    }
     /** Called when the user clicks the Add button */
     public void add_item(View view) {
-       //EditText text = (EditText) findViewById(MyMessage);
-       // String str = text.getText().toString();
-        //ingredients += ", " + str;
+        EditText text = (EditText) findViewById(R.id.edit_message);
+        String str = text.getText().toString();
+        ingredients += ", " + str;
         View v = findViewById(R.id.recipe_list_ll);
         doGet(v);
         TextView textView = new TextView(this);
-       // textView.setText(str);
+        textView.setText(str);
 
         LinearLayout ll= (LinearLayout) findViewById(R.id.mainLayoutID);
         ll.addView(textView);
@@ -231,41 +201,37 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         editor.commit();
     }
 
+    private void addImage(final String img_url){
+   /*
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            Log.d("HELLO", "in add image");
+            LinearLayout linear = (LinearLayout) findViewById(R.id.recipe_list_ll);
+            ImageView image = new ImageView(WhatsInYourFridge.this);
+            image.setImageResource(R.mipmap.ic_launcher);
+            linear.addView(image);
 
-    public void onMeasurement(String recipe) {
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, "Pizza!", duration);
-        toast.show();
-    }
-    private void addImage(String img_url){
-
-        Log.d("HELLO", "inadd image");
-        LinearLayout linear= (LinearLayout) findViewById(R.id.recipe_list_ll);
-        ImageView image = new ImageView(WhatsInYourFridge.this);
-        image.setImageResource(R.mipmap.ic_launcher);
-        linear.addView(image);
-
-        Bitmap bitmap = getBitmapFromURL(img_url);
-       // image.setImageURI(Uri.parse(""));
-        image.setImageBitmap(bitmap);
-       // image.getLayoutParams().height = 200;
-        //image.getLayoutParams().width = 200;
-
-        Log.d("HELLO1234 ", String.valueOf(image));
-
-       // LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
-       // ImageView image = new ImageView(cs496.whatsinyourfridge.WhatsInYourFridge.this);
-       // image.setImageResource(R.mipmap.ic_launcher);
-       // ll.addView(image);
-
+            Bitmap bitmap = getBitmapFromURL(img_url);
+            image.setImageBitmap(bitmap);
+            //  image.getLayoutParams().height = 600;
+            //  image.getLayoutParams().width = 1000;
+            Log.d("HELLO1234 ", String.valueOf(image));
+        }*/
+     /*   else{
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                   addImage(img_url);
+                }
+            });
+        }
+*/
     }
     private void addRecipe(final String str, final String type) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
-            TextView txtResult = new TextView(this);
-            txtResult.setText(str);
+
 
             if(type == "url"){
+                TextView txtResult = new TextView(this);
+                txtResult.setText(str);
              txtResult.setOnClickListener(new View.OnClickListener() {
                  @Override
                  public void onClick(View v) {
@@ -273,14 +239,39 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                      startActivity(browserIntent);
                  }
              });
+                LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
+                ll.addView(txtResult);
+                if (txtResult != null) {
+                    txtResult.setText(str);
+                    txtResult.setMovementMethod(new ScrollingMovementMethod());
+                    txtResult.scrollTo(0, 0);
+                }
             }
-            LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
-            ll.addView(txtResult);
-            if (txtResult != null) {
+            else if(type == "img"){
+                Log.d("HELLO", "in add image");
+                LinearLayout linear = (LinearLayout) findViewById(R.id.recipe_list_ll);
+                ImageView image = new ImageView(WhatsInYourFridge.this);
+                image.setImageResource(R.mipmap.ic_launcher);
+                linear.addView(image);
+
+                Bitmap bitmap = getBitmapFromURL(str);
+                image.setImageBitmap(bitmap);
+                //  image.getLayoutParams().height = 600;
+                //  image.getLayoutParams().width = 1000;
+                Log.d("HELLO1234 ", String.valueOf(image));
+            }
+            else if(type == "title"){
+                TextView txtResult = new TextView(this);
                 txtResult.setText(str);
-                txtResult.setMovementMethod(new ScrollingMovementMethod());
-                txtResult.scrollTo(0, 0);
+                LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
+                ll.addView(txtResult);
+                if (txtResult != null) {
+                    txtResult.setText(str);
+                    txtResult.setMovementMethod(new ScrollingMovementMethod());
+                    txtResult.scrollTo(0, 0);
+                }
             }
+
         } else {
             runOnUiThread(
                     new Runnable() {
@@ -300,7 +291,5 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         ex.printStackTrace(new PrintWriter(tmp));
         return tmp.toString();
     }
-
-
 }
 

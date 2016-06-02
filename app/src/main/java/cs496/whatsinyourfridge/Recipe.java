@@ -13,16 +13,16 @@ public class Recipe {
 
     private Long when;
 
-    private String blather;
+    private String source_url;
 
-    private String tags;
+    private String img_url;
 
-    public String getBlather() {
-        return blather != null ? blather : "";
+    public String getSource_url() {
+        return source_url != null ? source_url : "";
     }
 
-    public String getTags() {
-        return tags != null ? tags : "";
+    public String getImg_url() {
+        return img_url != null ? img_url : "";
     }
 
     public String getTitle() {
@@ -33,12 +33,10 @@ public class Recipe {
         return when != null ? when.longValue() : 0L;
     }
 
-    public void setBlather(String blather) {
-        this.blather = (blather != null ? blather : "");
-    }
+    public void setSource_url(String source_url) {this.source_url = (source_url != null ? source_url : "");}
 
-    public void setTags(String tags) {
-        this.tags = tags;
+    public void setImg_url(String img_url) {
+        this.img_url = img_url;
     }
 
     public void setTitle(String title) {
@@ -53,8 +51,8 @@ public class Recipe {
         JSONObject tmp = new JSONObject();
         tmp.put("when", getWhen());
         tmp.put("title", getTitle());
-        tmp.put("blather", getBlather());
-        tmp.put("tags", getTags());
+        tmp.put("source_url", getSource_url());
+        tmp.put("img_url", getImg_url());
         return tmp.toString();
 
     }
@@ -64,9 +62,8 @@ public class Recipe {
         Recipe entry = new Recipe();
         entry.setWhen(tmp.getLong("when"));
         entry.setTitle(tmp.getString("title"));
-        entry.setBlather(tmp.getString("blather"));
-        entry.setTags(tmp.getString("tags"));
+        entry.setSource_url(tmp.getString("source_url"));
+        entry.setImg_url(tmp.getString("img_url"));
         return entry;
-
     }
 }

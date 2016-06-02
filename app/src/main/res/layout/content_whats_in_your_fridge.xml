@@ -42,9 +42,9 @@
 
         <EditText
             android:id="@+id/edit_message"
-            android:layout_width="wrap_content"
-            android:layout_weight="1"
-            android:layout_height="wrap_content" />
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter ingredient here" />
         <Button
             android:id="@+id/add_button"
             android:layout_width="wrap_content"
