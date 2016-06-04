@@ -75,11 +75,11 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
     }
 
     public void doGet(View v) {
+        Log.d("test", "test");
         new AsyncTask<Void, Void, String>() {
             protected void onPreExecute() {
                 //addRecipe("Please wait...");
             }
-
             protected String doInBackground(Void... params) {
                 HttpGet http = new HttpGet("http://food2fork.com/api/search");
                 http.addFormField("key", "8fb888939f3d819b54a8c4f41cf9822f");
@@ -105,7 +105,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                     Log.d("Image_url", imageSlice);
 
                    // addImage(imageSlice);
-                    addRecipe(imageSlice, "image");
+                  //  addRecipe(imageSlice, "img");
                     addRecipe(titleSlice, "title");
                     addRecipe(sourceSlice, "url");
 
@@ -114,7 +114,6 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                     return formatError(e);
                 }
             }
-
             protected void onPostExecute(String txt) {
                 //addRecipe(txt, "title");
             }
@@ -135,6 +134,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                 buffer.interrupt();
             buffer.cleanup();
         }
+
         String filename = "mostRecentSearch";
         FileOutputStream outputStream;
 
@@ -152,6 +152,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
     }
 
     public void doSave(View v) {
+        /*
         try {
             Recipe entry = new Recipe();
             entry.setTitle(UiUtil.readText(this, R.id.txtTitle));
@@ -180,6 +181,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         } catch (IllegalArgumentException ex) {
             report(ex.getMessage());
         }
+        */
     }
     /** Called when the user clicks the Add button */
     public void add_item(View view) {
@@ -225,9 +227,11 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         }
 */
     }
-    private void addRecipe(final String str, final String type) {
-        if (Looper.getMainLooper() == Looper.myLooper()) {
 
+    private void addRecipe(final String str, final String type) {
+
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            Log.d("recipe", type);
 
             if(type == "url"){
                 TextView txtResult = new TextView(this);
@@ -252,20 +256,22 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                 LinearLayout linear = (LinearLayout) findViewById(R.id.recipe_list_ll);
                 ImageView image = new ImageView(WhatsInYourFridge.this);
                 image.setImageResource(R.mipmap.ic_launcher);
-                linear.addView(image);
+                if (linear != null) {
+                    linear.addView(image);
+                }
 
                 Bitmap bitmap = getBitmapFromURL(str);
                 image.setImageBitmap(bitmap);
                 //  image.getLayoutParams().height = 600;
                 //  image.getLayoutParams().width = 1000;
-                Log.d("HELLO1234 ", String.valueOf(image));
+              //  Log.d("HELLO1234 ", String.valueOf(image));
             }
             else if(type == "title"){
                 TextView txtResult = new TextView(this);
                 txtResult.setText(str);
                 LinearLayout ll= (LinearLayout) findViewById(R.id.recipe_list_ll);
-                ll.addView(txtResult);
                 if (txtResult != null) {
+                    ll.addView(txtResult);
                     txtResult.setText(str);
                     txtResult.setMovementMethod(new ScrollingMovementMethod());
                     txtResult.scrollTo(0, 0);
@@ -273,6 +279,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
             }
 
         } else {
+          //  Log.d("looper ", Looper.getMainLooper().toString());
             runOnUiThread(
                     new Runnable() {
                         @Override
@@ -282,6 +289,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                     }
             );
         }
+
 
     }
 
