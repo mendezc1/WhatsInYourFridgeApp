@@ -32,30 +32,35 @@ import eecs.oregonstate.edu.tutorialauth.R;
 public class WhatsInYourFridge extends AppCompatActivity implements BufferThread.StatusListener  {
     String ingredients = " ";
     String mostRecent = " ";
+    String username;
+    String password;
+    long session;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
-        String username = intent.getStringExtra("username");
-        String password = intent.getStringExtra("password");
-        long session = intent.getLongExtra("session", 0L);
+        username = intent.getStringExtra("username");
+        password = intent.getStringExtra("password");
+        session = intent.getLongExtra("session", 0L);
 
         if (username == null || password == null || session <= 0L) {
             UiUtil.toastOnUiThread(this, "Error: username, password, session");
             return;
        }
         setContentView(R.layout.content_whats_in_your_fridge);
-        Context app = getApplicationContext();
-        SharedPreferences sharedPref = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        mostRecent = sharedPref.getString(getString(R.string.ingredientList), " ");
-
+        //Context app = getApplicationContext();
+       // SharedPreferences sharedPref = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+       //mostRecent = sharedPref.getString(getString(R.string.ingredientList), " ");
+        mostRecent = "okayhere";
+        buffer = new BufferThread(this, new FileManager(this), new Server(this, username, password, session));
+        buffer.start();
         Log.d("most recent", mostRecent);
         if(mostRecent.length() > 2) {
             View v = findViewById(R.id.ingredient_list_ll);
             doGet(v);
+            UiUtil.toastOnUiThread(this, "Most recent");
         }
-        buffer = new BufferThread(this, new FileManager(this), new Server(this, username, password, session));
-        buffer.start();
+
     }
     private BufferThread buffer;
 
@@ -75,18 +80,22 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
     }
 
     public void doGet(View v) {
-        Log.d("test", "test");
+        //Log.d("test", "test");
         new AsyncTask<Void, Void, String>() {
             protected void onPreExecute() {
                 //addRecipe("Please wait...");
             }
             protected String doInBackground(Void... params) {
-                HttpGet http = new HttpGet("http://food2fork.com/api/search");
-                http.addFormField("key", "8fb888939f3d819b54a8c4f41cf9822f");
+                HttpGet http;
                 if(ingredients == " "){
-                    http.addFormField("q", mostRecent);
+                    http = new HttpGet("http://10.0.3.2:8888/tutorialauth");
+                    http.addFormField("op", "create");
+                    http.addFormField("sessionId", Long.toString(session));
+                    Log.d("MOST", "attempting to get");
                 }
                 else {
+                    http = new HttpGet("http://food2fork.com/api/search");
+                    http.addFormField("key", "8fb888939f3d819b54a8c4f41cf9822f");
                     http.addFormField("q", ingredients);
                 }
 
@@ -108,6 +117,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                   //  addRecipe(imageSlice, "img");
                     addRecipe(titleSlice, "title");
                     addRecipe(sourceSlice, "url");
+                    doSave(titleSlice, sourceSlice, imageSlice);
 
                     return "thisshoulddonothing";
                 } catch (Exception e) {
@@ -151,37 +161,28 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         UiUtil.toastOnUiThread(this, msg);
     }
 
-    public void doSave(View v) {
-        /*
+    public void doSave(String title, String source, String image) {
+        Log.d("SAVE", "In do save");
         try {
             Recipe entry = new Recipe();
-            entry.setTitle(UiUtil.readText(this, R.id.txtTitle));
-            if (entry.getTitle().length() == 0)
-                throw new IllegalArgumentException("Please enter an ingredient.");
-            entry.setSource_url(UiUtil.readText(this, R.id.txtBlather));
+            entry.setTitle(title);
+            entry.setSource_url(source);
+            entry.setImg_url(image);
 
-
-            String tags = "";
-            if (UiUtil.readChk(this, R.id.chkIronic)) tags += "ironic ";
-            if (UiUtil.readChk(this, R.id.chkSerious)) tags += "serious ";
-            if (UiUtil.readChk(this, R.id.chkSilly)) tags += "silly ";
-            entry.setImg_url(tags);
             BufferThread tmp = buffer;
             if (tmp != null) {
                 tmp.write(entry);
 
                 // reset the screen
-                UiUtil.writeText(this, R.id.txtTitle, "");
-                UiUtil.writeText(this, R.id.txtBlather, "");
-                UiUtil.writeChk(this, R.id.chkSilly, false);
-                UiUtil.writeChk(this, R.id.chkIronic, false);
-                UiUtil.writeChk(this, R.id.chkSerious, false);
+               // UiUtil.writeText(this, R.id.txtTitle, "");
+              //  UiUtil.writeText(this, R.id.txtBlather, "");
+                //UiUtil.writeText(this. R.id.txtBlather, "");
             } else
                 report("Unable to save your work, right now. Sorry!");
         } catch (IllegalArgumentException ex) {
             report(ex.getMessage());
         }
-        */
+
     }
     /** Called when the user clicks the Add button */
     public void add_item(View view) {

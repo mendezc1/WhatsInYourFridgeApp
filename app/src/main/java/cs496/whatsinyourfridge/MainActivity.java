@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
                 protected void onPostExecute(Long sessionId) {
                     if (sessionId > 0) {
                         UiUtil.writeText(MainActivity.this, R.id.txtStatus, "");
-                        startLimerickEditor(username, password, sessionId);
+                        startWhatsInYourFridge(username, password, sessionId);
                     } else {
                         UiUtil.writeText(MainActivity.this, R.id.txtStatus, "Please try again...");
                     }
@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startLimerickEditor(String username, String password, long sessionId) {
+    private void startWhatsInYourFridge(String username, String password, long sessionId) {
         Intent intent = new Intent(this, WhatsInYourFridge.class);
         intent.putExtra("username", username);
         intent.putExtra("password", password);
