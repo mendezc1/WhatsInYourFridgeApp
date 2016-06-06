@@ -86,14 +86,30 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                 //addRecipe("Please wait...");
             }
             protected String doInBackground(Void... params) {
-                HttpGet http;
+
                 if(ingredients == " "){
-                    http = new HttpGet("http://10.0.3.2:8888/tutorialauth");
-                    http.addFormField("op", "list");
+                    String sessionID = Long.toString(session);
+                    HttpGet httpList = new HttpGet("http://10.0.3.2:8888/tutorialauth");
+                    httpList.addFormField("op", "list");
+                    httpList.addFormField("sessionId", sessionID);
+                    String idSlice = " ";
+                    try {
+                        String rvString = httpList.finish();
+                        int idIndex = rvString.indexOf("id");
+                        int titleIndex = rvString.indexOf("title");
+                        idSlice = rvString.substring(idIndex+4,titleIndex-2);
+                        Log.d("ID", idSlice);
+
+                    } catch (Exception e) {
+                        Log.d("ERROR", "d");
+                    }
+
+                    HttpGet http = new HttpGet("http://10.0.3.2:8888/tutorialauth");
+                    http.addFormField("op", "read");
                     //op list gets user list
-                    http.addFormField("sessionId", Long.toString(session));
-                   // http.addFormField("id", "4538783999459328");
-                    Log.d("MOST", Long.toString(session));
+                    http.addFormField("sessionId", sessionID);
+                    http.addFormField("id", idSlice);
+                    Log.d("MOST", sessionID);
                     try {
                         String rvString = http.finish();
                         int titleIndex = rvString.indexOf("title");
@@ -103,7 +119,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                         Log.d("source", Long.toString(sourceIndex));
 
                         String titleSlice = rvString.substring(titleIndex+8, imageStart-3);
-                       // String sourceSlice = rvString.substring(sourceIndex, endOfSource);
+                       String sourceSlice = rvString.substring(sourceIndex, endOfSource);
                        // String imageSlice = rvString.substring(imageStart+12, sourceIndex-3);
                         Log.d("title", titleSlice);
                        // Log.d("source_url ", sourceSlice);
@@ -112,7 +128,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                         // addImage(imageSlice);
                         //  addRecipe(imageSlice, "img");
                         addRecipe(titleSlice, "title");
-                       // addRecipe(sourceSlice, "url");
+                        addRecipe(sourceSlice, "url");
                        // doSave(titleSlice, sourceSlice, imageSlice);
 
                         return "thisshoulddonothing";
@@ -122,6 +138,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                     }
                 }
                 else {
+                    HttpGet http;
                     http = new HttpGet("http://food2fork.com/api/search");
                     http.addFormField("key", "8fb888939f3d819b54a8c4f41cf9822f");
                     http.addFormField("q", ingredients);
