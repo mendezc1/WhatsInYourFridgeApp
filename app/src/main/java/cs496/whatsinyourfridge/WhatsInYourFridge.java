@@ -58,7 +58,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         if(mostRecent.length() > 2) {
             View v = findViewById(R.id.ingredient_list_ll);
             doGet(v);
-            UiUtil.toastOnUiThread(this, "Most recent");
+            //UiUtil.toastOnUiThread(this, "Most recent");
         }
 
     }
@@ -89,40 +89,69 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                 HttpGet http;
                 if(ingredients == " "){
                     http = new HttpGet("http://10.0.3.2:8888/tutorialauth");
-                    http.addFormField("op", "create");
+                    http.addFormField("op", "list");
+                    //op list gets user list
                     http.addFormField("sessionId", Long.toString(session));
-                    Log.d("MOST", "attempting to get");
+                   // http.addFormField("id", "4538783999459328");
+                    Log.d("MOST", Long.toString(session));
+                    try {
+                        String rvString = http.finish();
+                        int titleIndex = rvString.indexOf("title");
+                        int sourceIndex = rvString.indexOf("source_url");
+                        int endOfSource = rvString.indexOf("when");
+                        int imageStart = rvString.indexOf("image_url");
+                        Log.d("source", Long.toString(sourceIndex));
+
+                        String titleSlice = rvString.substring(titleIndex+8, imageStart-3);
+                       // String sourceSlice = rvString.substring(sourceIndex, endOfSource);
+                       // String imageSlice = rvString.substring(imageStart+12, sourceIndex-3);
+                        Log.d("title", titleSlice);
+                       // Log.d("source_url ", sourceSlice);
+                       // Log.d("Image_url", imageSlice);
+
+                        // addImage(imageSlice);
+                        //  addRecipe(imageSlice, "img");
+                        addRecipe(titleSlice, "title");
+                       // addRecipe(sourceSlice, "url");
+                       // doSave(titleSlice, sourceSlice, imageSlice);
+
+                        return "thisshoulddonothing";
+                    } catch (Exception e) {
+                        Log.d("ERROR", "e");
+                        return formatError(e);
+                    }
                 }
                 else {
                     http = new HttpGet("http://food2fork.com/api/search");
                     http.addFormField("key", "8fb888939f3d819b54a8c4f41cf9822f");
                     http.addFormField("q", ingredients);
+                    try {
+                        String rvString = http.finish();
+                        int titleIndex = rvString.indexOf("title");
+                        int endOfTitle = rvString.indexOf("source_url");
+                        int sourceIndex = endOfTitle;
+                        int endOfSource = rvString.indexOf("recipe_id");
+                        String titleSlice = rvString.substring(titleIndex+9, endOfTitle-4);
+                        String sourceSlice = rvString.substring(sourceIndex+14, endOfSource-4);
+                        int imageStart = rvString.indexOf("image_url");
+                        int imageEnd = rvString.indexOf("social_rank");
+                        String imageSlice = rvString.substring(imageStart+13, imageEnd-4);
+                        Log.d("source_url ", sourceSlice);
+                        Log.d("Image_url", imageSlice);
+
+                        // addImage(imageSlice);
+                        //  addRecipe(imageSlice, "img");
+                        addRecipe(titleSlice, "title");
+                        addRecipe(sourceSlice, "url");
+                        doSave(titleSlice, sourceSlice, imageSlice);
+
+                        return "thisshoulddonothing";
+                    } catch (Exception e) {
+                        return formatError(e);
+                    }
                 }
 
-                try {
-                    String rvString = http.finish();
-                    int titleIndex = rvString.indexOf("title");
-                    int endOfTitle = rvString.indexOf("source_url");
-                    int sourceIndex = endOfTitle;
-                    int endOfSource = rvString.indexOf("recipe_id");
-                    String titleSlice = rvString.substring(titleIndex+9, endOfTitle-4);
-                    String sourceSlice = rvString.substring(sourceIndex+14, endOfSource-4);
-                    int imageStart = rvString.indexOf("image_url");
-                    int imageEnd = rvString.indexOf("social_rank");
-                    String imageSlice = rvString.substring(imageStart+13, imageEnd-4);
-                    Log.d("source_url ", sourceSlice);
-                    Log.d("Image_url", imageSlice);
 
-                   // addImage(imageSlice);
-                  //  addRecipe(imageSlice, "img");
-                    addRecipe(titleSlice, "title");
-                    addRecipe(sourceSlice, "url");
-                    doSave(titleSlice, sourceSlice, imageSlice);
-
-                    return "thisshoulddonothing";
-                } catch (Exception e) {
-                    return formatError(e);
-                }
             }
             protected void onPostExecute(String txt) {
                 //addRecipe(txt, "title");
