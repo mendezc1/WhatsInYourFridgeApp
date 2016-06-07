@@ -119,16 +119,18 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                         Log.d("source", Long.toString(sourceIndex));
 
                         String titleSlice = rvString.substring(titleIndex+8, imageStart-3);
-                       String sourceSlice = rvString.substring(sourceIndex, endOfSource);
-                       // String imageSlice = rvString.substring(imageStart+12, sourceIndex-3);
+                       String sourceSlice = rvString.substring(sourceIndex+13, endOfSource-3);
+                        String imageSlice = rvString.substring(imageStart+12, sourceIndex-3);
                         Log.d("title", titleSlice);
-                       // Log.d("source_url ", sourceSlice);
-                       // Log.d("Image_url", imageSlice);
+                        Log.d("source_url ", sourceSlice);
+                        Log.d("Image_url", imageSlice);
 
                         // addImage(imageSlice);
-                        //  addRecipe(imageSlice, "img");
-                        addRecipe(titleSlice, "title");
-                        addRecipe(sourceSlice, "url");
+                        //addRecipe(imageSlice, "img");
+                        Bitmap bitmap = getBitmapFromURL(imageSlice);
+                        addRecipe(imageSlice, "img", bitmap);
+                        addRecipe(titleSlice, "title", bitmap);
+                        addRecipe(sourceSlice, "url", bitmap);
                        // doSave(titleSlice, sourceSlice, imageSlice);
 
                         return "thisshoulddonothing";
@@ -157,9 +159,10 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                         Log.d("Image_url", imageSlice);
 
                         // addImage(imageSlice);
-                        //  addRecipe(imageSlice, "img");
-                        addRecipe(titleSlice, "title");
-                        addRecipe(sourceSlice, "url");
+                        Bitmap bitmap = getBitmapFromURL(imageSlice);
+                        addRecipe(imageSlice, "img", bitmap);
+                        addRecipe(titleSlice, "title", bitmap);
+                        addRecipe(sourceSlice, "url", bitmap);
                         doSave(titleSlice, sourceSlice, imageSlice);
 
                         return "thisshoulddonothing";
@@ -214,15 +217,12 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
             entry.setTitle(title);
             entry.setSource_url(source);
             entry.setImg_url(image);
+            String string = entry.getImg_url();
 
             BufferThread tmp = buffer;
             if (tmp != null) {
                 tmp.write(entry);
-
-                // reset the screen
-               // UiUtil.writeText(this, R.id.txtTitle, "");
-              //  UiUtil.writeText(this, R.id.txtBlather, "");
-                //UiUtil.writeText(this. R.id.txtBlather, "");
+                Log.d("BUFFER", string);
             } else
                 report("Unable to save your work, right now. Sorry!");
         } catch (IllegalArgumentException ex) {
@@ -251,6 +251,24 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
     }
 
     private void addImage(final String img_url){
+        Log.d("HELLO", "in add image");
+        LinearLayout linear = (LinearLayout) findViewById(R.id.recipe_list_ll);
+        ImageView image = new ImageView(WhatsInYourFridge.this);
+
+        try{
+            image.setImageResource(R.mipmap.ic_launcher);
+            if (linear != null) {
+                linear.addView(image);
+            }
+
+            Bitmap bitmap = getBitmapFromURL(img_url);
+            image.setImageBitmap(bitmap);
+            //  image.getLayoutParams().height = 600;
+            //  image.getLayoutParams().width = 1000;
+            //  Log.d("HELLO1234 ", String.valueOf(image));
+        }catch (IllegalArgumentException ex) {
+            report(ex.getMessage());
+        }
    /*
         if (Looper.getMainLooper() == Looper.myLooper()) {
             Log.d("HELLO", "in add image");
@@ -258,7 +276,6 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
             ImageView image = new ImageView(WhatsInYourFridge.this);
             image.setImageResource(R.mipmap.ic_launcher);
             linear.addView(image);
-
             Bitmap bitmap = getBitmapFromURL(img_url);
             image.setImageBitmap(bitmap);
             //  image.getLayoutParams().height = 600;
@@ -274,8 +291,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
         }
 */
     }
-
-    private void addRecipe(final String str, final String type) {
+    private void addRecipe(final String str, final String type, final Bitmap bitmap) {
 
         if (Looper.getMainLooper() == Looper.myLooper()) {
             Log.d("recipe", type);
@@ -299,19 +315,10 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                 }
             }
             else if(type == "img"){
-                Log.d("HELLO", "in add image");
                 LinearLayout linear = (LinearLayout) findViewById(R.id.recipe_list_ll);
                 ImageView image = new ImageView(WhatsInYourFridge.this);
-                image.setImageResource(R.mipmap.ic_launcher);
-                if (linear != null) {
-                    linear.addView(image);
-                }
-
-                Bitmap bitmap = getBitmapFromURL(str);
                 image.setImageBitmap(bitmap);
-                //  image.getLayoutParams().height = 600;
-                //  image.getLayoutParams().width = 1000;
-              //  Log.d("HELLO1234 ", String.valueOf(image));
+                linear.addView(image);
             }
             else if(type == "title"){
                 TextView txtResult = new TextView(this);
@@ -331,7 +338,7 @@ public class WhatsInYourFridge extends AppCompatActivity implements BufferThread
                     new Runnable() {
                         @Override
                         public void run() {
-                            addRecipe(str, type);
+                            addRecipe(str, type, bitmap);
                         }
                     }
             );
